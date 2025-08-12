@@ -32,7 +32,7 @@ We provide an example script how to train a simple MLP on the constrained SDD-da
 python pal/training/train_mlp_sdd.py --epochs 10 --init_last_layer_positive --seed 1744909132
 ```
 
-This should result in a (mean) test log-likelihood of `-1.9800`.
+This should result in a (mean) test log-likelihood of `-1.9149`.
 
 # GASP!
 The dependency was added via subtree from https://github.com/april-tools/gasp.git into pal/wmi/gasp!
