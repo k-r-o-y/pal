@@ -64,7 +64,7 @@ def test_spline_integration_mc_pipeline():
     random_parameter = [torch.rand(1, *s) for s in integrated_distribution.parameter_shape()]
     random_parameter[0] = 10 * random_parameter[0]  # Scale the values to be larger than the derivatives
     # Softmax over mixture weights
-    random_parameter[-1] = torch.nn.functional.softmax(random_parameter[-1], dim=-1)
+    random_parameter[-1] = torch.nn.functional.softmax(random_parameter[-1], dim=-1).log()
 
     # Create the spline distribution
     spline_dist = integrated_distribution(*random_parameter)
