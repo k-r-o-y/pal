@@ -640,6 +640,11 @@ def calc_log_mixture(
         dim=-1
     )  # (num_mixtures)
 
+    if eps != -1:
+        # with torch.no_grad():
+        #     m_normalization_coeff = m_normalization_coeff.clamp(min=eps)
+        m_normalization_coeff = m_normalization_coeff.clamp(min=eps)
+
     densities_components = mixture_poly ** 2 / m_normalization_coeff
     poly_log = torch.logsumexp(
         torch.log(densities_components) + m_weights_log, dim=0

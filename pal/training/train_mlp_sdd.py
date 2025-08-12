@@ -327,7 +327,7 @@ def main(args: argparse.Namespace) -> None:
             x = x.to(device).to(precision)
             y = y.to(device).to(precision)
 
-            log_dens = model(x).log_dens(y)
+            log_dens = model(x).log_dens(y, eps=1e-6)
             val_ll.append(log_dens.to("cpu"))
         val_ll = torch.cat(val_ll).mean()
         print(f"Validation log-likelihood: {val_ll:.4f} (reference: {best_val_ll:.4f})")
