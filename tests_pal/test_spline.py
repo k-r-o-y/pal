@@ -2,6 +2,7 @@ from pal.logic.lra import LinearInequality as LI, And, LRAProblem
 from pal.distribution.spline_distribution import SplineSQ2DBuilder
 import torch
 
+
 def test_spline_knots_values():
     """
     Test that the value at the knots matches the parameterized value.
@@ -16,7 +17,7 @@ def test_spline_knots_values():
     expression = And(constraint1, constraint2, constraint3, constraint4)
 
     # Define variable bounds
-    variables = {"x": (0, 1), "y": (0, 1)}
+    variables = {"x": (0.0, 1.0), "y": (0.0, 1.0)}
 
     # Create the LRAProblem
     constraints = LRAProblem(expression=expression, variables=variables, name="Square")
@@ -38,7 +39,13 @@ def test_spline_knots_values():
         device=torch.device("cpu"),
     ) / ((spline_builder.num_knots - 1)**2)
     # coeffs_2dgrid = coeffs_2dgrid / coeffs_2dgrid.sum(dim=-1).sum(dim=-1)
-    spline_dist = spline_builder.get_distribution({(i, j): coeffs_2dgrid[i, j] for i in range(coeffs_2dgrid.shape[0]) for j in range(coeffs_2dgrid.shape[1])})
+    spline_dist = spline_builder.get_distribution(
+        {
+            (i, j): coeffs_2dgrid[i, j]
+            for i in range(coeffs_2dgrid.shape[0])
+            for j in range(coeffs_2dgrid.shape[1])
+        }
+    )
 
     # Define value_params to match the number of knots
     value_params = torch.rand(2, spline_builder.num_knots)
