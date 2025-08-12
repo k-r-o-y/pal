@@ -105,7 +105,7 @@ def create_network(
     def reparam(
         out_nn: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        param_mixture_weights = out_nn[:, :num_mixture_param].softmax(dim=-1)
+        param_mixture_weights_log = out_nn[:, :num_mixture_param].log_softmax(dim=-1)
 
         param_dens_value = out_nn[
             :, num_mixture_param: (num_mixture_param + num_dens_knots_values)
@@ -117,7 +117,7 @@ def create_network(
             -1, *shape_derivative
         )
 
-        return param_dens_value, param_dens_derivative, param_mixture_weights
+        return param_dens_value, param_dens_derivative, param_mixture_weights_log
 
     model = SimpleFC[spline.SplineSQ2D](
         input_size=input_size,

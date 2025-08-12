@@ -311,15 +311,15 @@ class ConditionalSplineSQ2D(
         # or [num_mixtures, 2, self.num_knots]
         params_derivative: torch.Tensor,  # [batch_size, num_mixtures, 2, self.num_knots]
         # or [num_mixtures, 2, self.num_knots]
-        params_mixture_weights: torch.Tensor,  # [batch_size, num_mixtures] or [num_mixtures]
+        params_mixture_weights_log: torch.Tensor,  # [batch_size, num_mixtures] or [num_mixtures]
     ) -> "SplineSQ2D":
         if len(params_value.shape) == 3:
             assert len(params_derivative.shape) == 3
-            assert len(params_mixture_weights.shape) == 1
+            assert len(params_mixture_weights_log.shape) == 1
 
             params_value = params_value.unsqueeze(0)
             params_derivative = params_derivative.unsqueeze(0)
-            params_mixture_weights = params_mixture_weights.unsqueeze(0)
+            params_mixture_weights_log = params_mixture_weights_log.unsqueeze(0)
 
         def do_calc_for_1dcomponent(
             params_1d_value: torch.Tensor,  # (num_knots)
@@ -380,7 +380,7 @@ class ConditionalSplineSQ2D(
             knots=self.knots,
             differences=self.differences,
             poly_params=poly_params,
-            mixture_weights=params_mixture_weights,
+            mixture_weights_log=params_mixture_weights_log,
         )
 
     # def __call__(
@@ -424,7 +424,7 @@ class SplineSQ2D(ConstrainedDistribution, torch.nn.Module):
     poly_params: (
         torch.Tensor
     )  # (b, num_mixtures, 2, num_knots, 4), b=1 gets broadcasted
-    mixture_weights: torch.Tensor  # (b, num_mixtures), b=1 gets broadcasted
+    mixture_weights_log: torch.Tensor  # (b, num_mixtures), b=1 gets broadcasted
 
     def __init__(
         self,
@@ -438,7 +438,7 @@ class SplineSQ2D(ConstrainedDistribution, torch.nn.Module):
         differences: torch.Tensor,
         integrals_2dgrid: torch.Tensor,
         poly_params: torch.Tensor,
-        mixture_weights: torch.Tensor,
+        mixture_weights_log: torch.Tensor,
     ):
         """
         Initializes the builder with the constraints and the number of knots and mixtures.
@@ -458,7 +458,7 @@ class SplineSQ2D(ConstrainedDistribution, torch.nn.Module):
         self.register_buffer("differences", differences)
         self.register_buffer("integrals_2dgrid", integrals_2dgrid)
         self.register_buffer("poly_params", poly_params)
-        self.register_buffer("mixture_weights", mixture_weights)
+        self.register_buffer("mixture_weights_log", mixture_weights_log)
 
     def is_batched(self) -> bool:
         """
@@ -518,7 +518,7 @@ class SplineSQ2D(ConstrainedDistribution, torch.nn.Module):
                     x_elem,
                     knot_elem,
                     self.poly_params[0],
-                    self.mixture_weights[0],
+                    self.mixture_weights_log[0],
                     self.integrals_2dgrid[0],
                     eps,
                 )
@@ -529,7 +529,7 @@ class SplineSQ2D(ConstrainedDistribution, torch.nn.Module):
                 eval_point,
                 knot_idxs,
                 self.poly_params,
-                self.mixture_weights,
+                self.mixture_weights_log,
                 self.integrals_2dgrid,
             )
         if with_indicator:
@@ -540,12 +540,12 @@ class SplineSQ2D(ConstrainedDistribution, torch.nn.Module):
 
     def get_mixture_weights(self) -> torch.Tensor:
         """
-        Returns the mixture weights of the distribution.
+        Returns the mixture weights of the distribution (in log-space).
         """
         if self.is_batched():
-            return self.mixture_weights
+            return self.mixture_weights_log
         else:
-            return self.mixture_weights[0]
+            return self.mixture_weights_log[0]
 
     def enumerate_pieces(
         self, selected_mixture=None

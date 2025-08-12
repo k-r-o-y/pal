@@ -182,7 +182,7 @@ def sample_spline_distribution(
     Sample a single point from the SplineSQ2D distribution.
     """
     assert not dist.is_batched()
-    mixture_weights = dist.mixture_weights.squeeze(0)
+    mixture_weights = dist.mixture_weights_log.exp().squeeze(0)
     # sample the component index from the mixture weights
     component_index = torch.multinomial(mixture_weights, 1, replacement=True).item()
 

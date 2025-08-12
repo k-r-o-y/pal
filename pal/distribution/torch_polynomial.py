@@ -615,7 +615,7 @@ def calc_log_mixture(
     x: torch.Tensor,  # (2)
     knot_idx: torch.Tensor,  # (2)
     m_params: torch.Tensor,  # (num_mixtures, 2, num_pieces, 4)
-    m_weights: torch.Tensor,  # (num_mixtures)
+    m_weights_log: torch.Tensor,  # (num_mixtures)
     m_normalization: torch.Tensor,  # (num_mixtures, num_knots, num_knots)
     eps: float = -1,  # (num_mixtures)
 ):
@@ -642,7 +642,7 @@ def calc_log_mixture(
 
     densities_components = mixture_poly ** 2 / m_normalization_coeff
     poly_log = torch.logsumexp(
-        torch.log(densities_components) + torch.log(m_weights), dim=0
+        torch.log(densities_components) + m_weights_log, dim=0
     )
 
     return poly_log
