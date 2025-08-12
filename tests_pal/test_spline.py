@@ -48,7 +48,7 @@ def test_spline_knots_values():
 
     # Obtain a SplineSQ2D object by calling the forward method
     params_derivative = torch.zeros_like(params_value)
-    spline_dist = spline_dist(params_value, params_derivative, params_mixture_weights)
+    spline_dist = spline_dist(params_value, params_derivative, params_mixture_weights.log())
 
     # set normalizing integral to 1
     integral_sum = spline_dist.integrals_2dgrid.sum(dim=-1).sum(dim=-1)
