@@ -1,4 +1,6 @@
+import numpy as np
 import sdd.constrained_sdd as csdd
+import torch
 
 from pal.problem.constrained_problem import ConstrainedProblem, DatasetResult
 
@@ -43,6 +45,7 @@ class SDDSingleImageTrajectory(ConstrainedProblem):
         window_size: int = 5,  # how many points are used for the moving-window we condition on
         sampling_rate: int = 70,  # the sampling rate for these points
         predict_horizon_samples: int = 10,  # only used for validation/test as we sample during training
+        unconditional: bool = False,  # whether we just have the positions without the trajectory history
     ):
         if not os.path.exists(path):
             # Ensure the parent directory exists
@@ -60,13 +63,20 @@ class SDDSingleImageTrajectory(ConstrainedProblem):
         self.window_size = window_size
         self.sampling_rate = sampling_rate
         self.predict_horizon_samples = predict_horizon_samples
+        self.unconditional = unconditional
 
     def load_dataset(self):
-        train, val, test = self.dataset.get_trajectory_prediction_dataset(
-            window_size=self.window_size,
-            sampling_rate=self.sampling_rate,
-            predict_horizon_samples=self.predict_horizon_samples,
-        )
+        if self.unconditional:
+            train, val, test = self.dataset.get_unconditional_dataset()
+            train = torch.utils.data.TensorDataset(torch.tensor(train))
+            val = torch.utils.data.TensorDataset(torch.tensor(val))
+            test = torch.utils.data.TensorDataset(torch.tensor(test))
+        else:
+            train, val, test = self.dataset.get_trajectory_prediction_dataset(
+                window_size=self.window_size,
+                sampling_rate=self.sampling_rate,
+                predict_horizon_samples=self.predict_horizon_samples,
+            )
         return DatasetResult(train, val, test)
 
     def create_constraints(self):

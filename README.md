@@ -12,6 +12,8 @@ This is an example prediction of PAL on the Constrained Stanford Drone Dataset (
 
 ![Example image](data/sdd_spline_example.png)
 
+![Example image](data/sdd_unconditional_spline_example.png)
+
 ## Citation
 
 Leander Kurscheidt, Paolo Morettin, Roberto Sebastiani, Andrea Passerini, Antonio Vergari, A Probabilistic Neuro-symbolic Layer for Algebraic Constraint Satisfaction, arXiv:2503.19466
@@ -33,6 +35,14 @@ python pal/training/train_mlp_sdd.py --epochs 10 --init_last_layer_positive --se
 ```
 
 This should result in a (mean) test log-likelihood of `-1.9149`.
+
+There is also an unconditional variant of the experiment (fig. 1) in the paper. It can be trained like this:
+
+```bash
+python pal/training/train_unconditional_sdd.py --init_positive --use_float64 --num_knots 14 --num_mixtures 10 --lr 0.01 --epochs 1500 --seed 1764087361
+```
+
+This should result in a (mean) test log-likelihood of `-2.9493`.
 
 # GASP!
 The dependency was added via subtree from https://github.com/april-tools/gasp.git into pal/wmi/gasp!
