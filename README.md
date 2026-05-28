@@ -4,7 +4,7 @@
 This repo contains the code for PAL, a probabilistic neuro-symbolic layer for algebraic constraint satisfaction.
 This is a simplified implementation that focuses on the spline-case.
 
-Check out the paper: https://arxiv.org/abs/2503.19466v1
+Check out the paper [here](https://proceedings.mlr.press/v286/kurscheidt25a.html)!
 
 ## Example Prediction
 
@@ -53,4 +53,17 @@ git subtree pull --prefix pal/wmi/gasp https://github.com/april-tools/gasp.git m
 push via:
 ```bash
 git subtree push --prefix pal/wmi/gasp https://github.com/april-tools/gasp.git main
+```
+
+# Citation
+
+```
+@inproceedings{kurscheidt2025probabilistic,
+  title={A Probabilistic Neuro-symbolic Layer for Algebraic Constraint Satisfaction},
+  author={Kurscheidt, Leander and Morettin, Paolo and Sebastiani, Roberto and Passerini, Andrea and Vergari, Antonio},
+  booktitle={Conference on Uncertainty in Artificial Intelligence},
+  pages={2431--2471},
+  year={2025},
+  organization={PMLR}
+}
 ```
