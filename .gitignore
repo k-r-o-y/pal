@@ -1,3 +1,7 @@
+results/
+figures/experiment1/
+figures/experiment2/
+figures/experiment3/
 data
 .vscode
 sdd/__pycache__
@@ -8,3 +12,15 @@ build
 
 # all the pycache folders
 **/__pycache__/
+
+# Local Python environment and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Generated experiment outputs
+results/
+figures/experiment1/
+figures/experiment2/
+figures/experiment3/

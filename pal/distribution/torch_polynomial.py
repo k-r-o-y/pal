@@ -1,9 +1,7 @@
 from typing import Dict, List, Self, Any
 from frozendict import frozendict
 import torch
-
 import numpy as np
-
 from hashlib import sha1
 
 
@@ -13,14 +11,13 @@ def generate_monomial(
     max_exponent = min(max_individual_degree, max_total_degree)
     if n == 1:
         return [[i] for i in range(max_exponent + 1)]
-    else:
-        return [
-            [i] + monomial
-            for i in range(max_exponent + 1)
-            for monomial in generate_monomial(
-                n - 1, max_total_degree - i, max_individual_degree
-            )
-        ]
+    return [
+        [i] + monomial
+        for i in range(max_exponent + 1)
+        for monomial in generate_monomial(
+            n - 1, max_total_degree - i, max_individual_degree
+        )
+    ]
 
 
 def hash_torch_tensor(tensor: torch.Tensor) -> int:
@@ -37,9 +34,6 @@ def stable_np_sum(x: np.ndarray, axis: int) -> np.ndarray:
 
 
 class StateMixin:
-    """
-    A mixin class to handle the from_state method.
-    """
     @classmethod
     def from_state(cls, state_dict: Any, **kwargs) -> Self:
         init_args = {key: state_dict[key] for key in state_dict.keys()}
@@ -48,9 +42,6 @@ class StateMixin:
 
 
 class VariableMapMixin:
-    """
-    A mixin class to handle variable_map_dict logic.
-    """
     def __init__(self, variable_map_dict: Dict[str, int] | frozendict[str, int]) -> None:
         if not isinstance(variable_map_dict, frozendict):
             variable_map_dict = frozendict(variable_map_dict)
@@ -64,22 +55,6 @@ class VariableMapMixin:
 
 
 class TorchPolynomial(torch.nn.Module, VariableMapMixin, StateMixin):
-    """
-    A class representing a parametarized polynomial in PyTorch.
-
-    This class inherits from torch.nn.Module, and it is designed to handle polynomial operations
-    using PyTorch tensors.
-
-    It computes `f(x, psi) = sum_i coeffs[i] * x**powers[i] * psi[i]` where `x` is a tensor of variables,
-    `psi` is a tensor of parameters, and `coeffs` and `powers` are the coefficients and powers of the polynomial.
-
-    Args:
-        coeffs (torch.Tensor): Tensor containing the coefficients of the polynomial. Shape: (num_terms,).
-        powers (torch.Tensor): Tensor containing the powers of the polynomial. Shape: (num_terms, num_vars).
-        variable_map_dict (Dict[str, int] | frozendict[str, int]): Dictionary mapping variable names to their indices.
-        absolute (bool): Whether to take the absolute value of the polynomial. Defaults to True.
-    """
-
     coeffs: torch.Tensor
     powers: torch.Tensor
 
@@ -115,17 +90,16 @@ class TorchPolynomial(torch.nn.Module, VariableMapMixin, StateMixin):
     def reorder_parameter_positions(
         self, param_index_map: Dict[int, int]
     ) -> "TorchPolynomial":
-        """
-        Reorders the parameters in the polynomial according to the given mapping.
-        """
-        # assert the new indices are a permutation of the old indices
         assert set(param_index_map.keys()) == set(param_index_map.values())
+
         new_coeffs = torch.zeros_like(self.coeffs)
         new_powers = torch.zeros_like(self.powers)
+
         for i in range(self.powers.shape[0]):
             new_position = param_index_map[i]
             new_coeffs[new_position] = self.coeffs[i]
             new_powers[new_position] = self.powers[i]
+
         return TorchPolynomial(
             coeffs=new_coeffs,
             powers=new_powers,
@@ -133,7 +107,6 @@ class TorchPolynomial(torch.nn.Module, VariableMapMixin, StateMixin):
             absolute=self.absolute,
         )
 
-    @torch.compile
     def eval_tensor(
         self,
         y_tensor: torch.Tensor | None,
@@ -142,15 +115,11 @@ class TorchPolynomial(torch.nn.Module, VariableMapMixin, StateMixin):
     ) -> torch.Tensor:
         assert y_tensor is not None
 
-        @torch.compile
         def eval_single_monomial(
             y: torch.Tensor, monomial: torch.Tensor
         ) -> torch.Tensor:
-            # shape of monomial: (num_vars,)
-            # shape of y: (num_vars)
             return torch.pow(y, monomial).prod(dim=-1)
 
-        @torch.compile
         def eval_polynomial_single(
             y: torch.Tensor, param: torch.Tensor
         ) -> torch.Tensor:
@@ -161,25 +130,26 @@ class TorchPolynomial(torch.nn.Module, VariableMapMixin, StateMixin):
             return weighted.sum(dim=-1)
 
         polys = torch.vmap(eval_polynomial_single)(y_tensor, param_tensor)
+
         if self.absolute:
             polys = polys.abs()
+
         if sq_epsilon != -1:
             with torch.no_grad():
                 polys[polys < sq_epsilon] = sq_epsilon
+
         return polys
 
-    @torch.compile
     def eval_monomials(self, y_tensor: torch.Tensor) -> torch.Tensor:
-        @torch.compile
         def eval_single_monomial(
             y: torch.Tensor, monomial: torch.Tensor
         ) -> torch.Tensor:
             return torch.pow(y, monomial).prod(dim=-1)
 
-        monomials = torch.vmap(
-            lambda mon: eval_single_monomial(y_tensor, mon), out_dims=-1
+        return torch.vmap(
+            lambda mon: eval_single_monomial(y_tensor, mon),
+            out_dims=-1,
         )(self.powers)
-        return monomials
 
     def square(self) -> "SquaredSymbolicTorchPolynomial":
         return SquaredSymbolicTorchPolynomial(
@@ -200,16 +170,7 @@ class TorchPolynomial(torch.nn.Module, VariableMapMixin, StateMixin):
             + hash(self._variable_map_dict)
         )
 
-
 class SquaredParamsTorchPolynomial(torch.nn.Module, VariableMapMixin, StateMixin):
-    """
-    A class representing a squared polynomial, for which the variables are integrated out,
-    so it is only a function of the parameters.
-
-    It computes `f(psi) = sum_i coeffs[i] * psi[i]` where `psi` is a tensor of parameters,
-    and `coeffs` are the coefficients of the polynomial.
-    """
-
     coeffs: torch.Tensor
     indices_params: torch.Tensor
 
@@ -217,21 +178,18 @@ class SquaredParamsTorchPolynomial(torch.nn.Module, VariableMapMixin, StateMixin
         self,
         coeffs: torch.Tensor,
         indices_params: torch.Tensor,
-        variable_map_dict: Dict[str, int] | frozendict[str, int]
+        variable_map_dict: Dict[str, int] | frozendict[str, int],
     ) -> None:
         torch.nn.Module.__init__(self)
         VariableMapMixin.__init__(self, variable_map_dict)
         self.register_buffer("coeffs", coeffs)
         self.register_buffer("indices_params", indices_params)
 
-    @torch.compile
     def eval_tensor(
         self,
         param_tensor: torch.Tensor,
         sq_epsilon: float = -1,
     ) -> torch.Tensor:
-
-        @torch.compile
         def eval_param_instance(param: torch.Tensor) -> torch.Tensor:
             combs = self.coeffs * torch.combinations(
                 param, 2, with_replacement=True
@@ -243,6 +201,7 @@ class SquaredParamsTorchPolynomial(torch.nn.Module, VariableMapMixin, StateMixin
         if sq_epsilon != -1:
             with torch.no_grad():
                 params_combinations[params_combinations < sq_epsilon] = sq_epsilon
+
         return params_combinations
 
     def to_state(self) -> Any:
@@ -251,19 +210,10 @@ class SquaredParamsTorchPolynomial(torch.nn.Module, VariableMapMixin, StateMixin
         return state
 
     def __hash__(self) -> int:
-        return (
-            hash_torch_tensor(self.coeffs)
-            + hash(self._variable_map_dict)
-        )
+        return hash_torch_tensor(self.coeffs) + hash(self._variable_map_dict)
 
 
 class SquaredTorchPolynomial(torch.nn.Module, VariableMapMixin, StateMixin):
-    """"
-    A class that represents a squared polynomial using PyTorch tensors, with known parameters.
-
-    It computes `f(x) = (sum_i coeffs[i] * x**powers[i] * psi[i])**2` where `x` is a tensor of variables,
-    `psi` is a tensor of parameters, and `coeffs` and `powers` are the coefficients and powers of the polynomial.
-    """
     coeffs: torch.Tensor
     powers: torch.Tensor
     params: torch.Tensor
@@ -277,50 +227,43 @@ class SquaredTorchPolynomial(torch.nn.Module, VariableMapMixin, StateMixin):
     ) -> None:
         torch.nn.Module.__init__(self)
         VariableMapMixin.__init__(self, variable_map_dict)
+
         self.register_buffer("coeffs", coeffs)
         self.register_buffer("powers", powers)
+
         if params.shape[0] == 1:
             params = params.squeeze(0)
+
         self.register_buffer("params", params)
+
         assert coeffs.shape[0] == powers.shape[0]
 
     def get_max_total_degree(self) -> int:
-        """
-        Returns the maximum total degree of the polynomial.
-
-        Returns:
-            int: The maximum total degree.
-        """
         return 2 * int(self.powers.sum(dim=-1).max().item())
-    
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Evaluates the polynomial at the given tensor x.
-        This is the vectorized version of the polynomial.
-        """
         def eval_single_monomial(
-            y: torch.Tensor, monomial: torch.Tensor, coeff: torch.Tensor, param: torch.Tensor
+            y: torch.Tensor,
+            monomial: torch.Tensor,
+            coeff: torch.Tensor,
+            param: torch.Tensor,
         ) -> torch.Tensor:
-            # shape of monomial: (num_vars,)
-            # shape of y: (num_vars)
             return coeff * torch.pow(y, monomial).prod(dim=-1) * param
-        
+
         def eval_polynomial(y: torch.Tensor, the_params: torch.Tensor) -> torch.Tensor:
             monomials = torch.vmap(
                 lambda m, c, p: eval_single_monomial(y, m, c, p)
-            )(
-                self.powers, self.coeffs, the_params
-            )
+            )(self.powers, self.coeffs, the_params)
             return monomials.sum(dim=-1) ** 2
-        
+
         if len(self.params.shape) == 1:
             return torch.vmap(lambda x: eval_polynomial(x, self.params))(x)
-        else:
-            return torch.vmap(
-                lambda x, p: eval_polynomial(x, p), in_dims=(0, 0), out_dims=1
-            )(
-                x, self.params
-            )
+
+        return torch.vmap(
+            lambda x, p: eval_polynomial(x, p),
+            in_dims=(0, 0),
+            out_dims=1,
+        )(x, self.params)
 
     def to_state(self) -> Any:
         state = super().to_state()
@@ -329,23 +272,6 @@ class SquaredTorchPolynomial(torch.nn.Module, VariableMapMixin, StateMixin):
 
 
 class SquaredSymbolicTorchPolynomial(torch.nn.Module, VariableMapMixin, StateMixin):
-    """
-    A class representing a squared polynomial using PyTorch tensors with unknown parameters.
-
-    It computes `f(x, psi) = (sum_i coeffs[i] * x ** powers[i] * psi[i]) ** 2` where `x` is a tensor of variables,
-    `psi` is a tensor of parameters, and `coeffs` and `powers` are the coefficients and powers of the polynomial.
-
-    This class inherits from torch.nn.Module, and it is designed to
-    handle polynomial operations with PyTorch tensors. The polynomial is represented by
-    its coefficients and powers, and it supports both vectorized and non-vectorized evaluations.
-
-    The vectorized version represents a symbolic polynomial as a vectorized, non-symbolic polynomial.
-    So, for example, the polynomial x^2*param1^2 + x*z*param1*param2 (symbolic in the parameters)
-    would be represented as [x^2, x*z], where the first element represents monomial associated with param1^2
-    and the second element represents the monomial associated with param1*param2.
-    This allows us to evaluate a symbolic polynomial using PyTorch.
-    """
-
     coeffs: torch.Tensor
     powers: torch.Tensor
     combinations_coefficient: torch.Tensor
@@ -361,73 +287,61 @@ class SquaredSymbolicTorchPolynomial(torch.nn.Module, VariableMapMixin, StateMix
     ) -> None:
         torch.nn.Module.__init__(self)
         VariableMapMixin.__init__(self, variable_map_dict)
+
         self.register_buffer("coeffs", coeffs)
         self.register_buffer("powers", powers)
 
         if indices_params is None:
             assert combinations_coefficient is None
+
             indexes = torch.arange(0, powers.shape[0], device=powers.device)
-            assert indexes.shape[0] == powers.shape[0]
             combinations = torch.combinations(indexes, 2, with_replacement=True)
+
             self.register_buffer("indices_params", combinations, persistent=False)
+
             combinations_coefficient = torch.ones(
-                combinations.shape[0], dtype=torch.float32
+                combinations.shape[0],
+                dtype=torch.float32,
+                device=powers.device,
             )
             combinations_coefficient[combinations[:, 0] != combinations[:, 1]] = 2
+
             self.register_buffer(
-                "combinations_coefficient", combinations_coefficient, persistent=False
+                "combinations_coefficient",
+                combinations_coefficient,
+                persistent=False,
             )
         else:
             assert combinations_coefficient is not None
             assert indices_params.shape[0] == combinations_coefficient.shape[0]
+
             self.register_buffer("indices_params", indices_params, persistent=False)
             self.register_buffer(
-                "combinations_coefficient", combinations_coefficient, persistent=False
+                "combinations_coefficient",
+                combinations_coefficient,
+                persistent=False,
             )
 
     def get_max_total_degree(self) -> int:
-        """
-        Returns the maximum total degree of the polynomial.
-
-        Returns:
-            int: The maximum total degree.
-        """
         return 2 * int(self.powers.sum(dim=-1).max().item())
 
     def get_num_vars(self) -> int:
-        """
-        Returns the number of variables in the polynomial.
-
-        Returns:
-            int: The number of variables.
-        """
         return self.powers.shape[-1]
 
     def to_integrated_polynomial(
-        self, coeff: torch.Tensor
+        self,
+        coeff: torch.Tensor,
     ) -> SquaredParamsTorchPolynomial:
-        """
-        Converts an *evaluated* vectorized polynomial (= symbolic polynomial)
-        to a SquaredParamsWithCoefficientsTorchPolynomial.
-
-        Args:
-            coeff: The coefficients of the polynomial. Results from calling forward (and merging).
-
-        Returns:
-            A SquaredParamsWithCoefficientsTorchPolynomial object.
-        """
         return SquaredParamsTorchPolynomial(
             coeffs=coeff,
             indices_params=self.indices_params,
             variable_map_dict=self._variable_map_dict,
         )
-    
+
     def to_applied_polynomial(
-        self, params: torch.Tensor
+        self,
+        params: torch.Tensor,
     ) -> SquaredTorchPolynomial:
-        """
-        Converts to an *applied* polynomial, which is a polynomial with known parameters.
-        """
         return SquaredTorchPolynomial(
             coeffs=self.coeffs,
             powers=self.powers,
@@ -435,7 +349,6 @@ class SquaredSymbolicTorchPolynomial(torch.nn.Module, VariableMapMixin, StateMix
             variable_map_dict=self._variable_map_dict,
         )
 
-    @torch.compile
     def eval_tensor(
         self,
         y_tensor: torch.Tensor,
@@ -443,20 +356,18 @@ class SquaredSymbolicTorchPolynomial(torch.nn.Module, VariableMapMixin, StateMix
         sq_epsilon: float = -1,
         vectorized: bool = False,
     ) -> torch.Tensor:
-
-        @torch.compile
         def eval_single_monomial(
-            y: torch.Tensor, monomial: torch.Tensor
+            y: torch.Tensor,
+            monomial: torch.Tensor,
         ) -> torch.Tensor:
-            # shape of monomial: (num_vars,)
-            # shape of y: (num_vars)
             return torch.pow(y, monomial).prod(dim=-1)
 
         if not vectorized:
+            assert param_tensor is not None
 
-            @torch.compile
             def eval_polynomial_single(
-                y: torch.Tensor, param: torch.Tensor
+                y: torch.Tensor,
+                param: torch.Tensor,
             ) -> torch.Tensor:
                 monomials = torch.vmap(lambda mon: eval_single_monomial(y, mon))(
                     self.powers
@@ -469,40 +380,37 @@ class SquaredSymbolicTorchPolynomial(torch.nn.Module, VariableMapMixin, StateMix
             if sq_epsilon != -1:
                 with torch.no_grad():
                     polys[polys < sq_epsilon] = sq_epsilon
+
             return polys
-        else:
-            assert param_tensor is None
-            assert sq_epsilon == -1
 
-            @torch.compile
-            def eval_vectorized_polynomial(y: torch.Tensor) -> torch.Tensor:
-                monomials = torch.vmap(lambda mon: eval_single_monomial(y, mon))(
-                    self.powers
-                )
-                monomials = self.coeffs * monomials
-                monomials_combinations = torch.combinations(
-                    monomials, 2, with_replacement=True
-                ).prod(dim=-1)
-                return monomials_combinations * self.combinations_coefficient
+        assert param_tensor is None
+        assert sq_epsilon == -1
 
-            vectorized_mons = torch.vmap(
-                eval_vectorized_polynomial, in_dims=0, out_dims=1
-            )(y_tensor)
-            return vectorized_mons
-    
-    @torch.compile
+        def eval_vectorized_polynomial(y: torch.Tensor) -> torch.Tensor:
+            monomials = torch.vmap(lambda mon: eval_single_monomial(y, mon))(
+                self.powers
+            )
+            monomials = self.coeffs * monomials
+            monomials_combinations = torch.combinations(
+                monomials,
+                2,
+                with_replacement=True,
+            ).prod(dim=-1)
+            return monomials_combinations * self.combinations_coefficient
+
+        return torch.vmap(
+            eval_vectorized_polynomial,
+            in_dims=0,
+            out_dims=1,
+        )(y_tensor)
+
     def eval_tensor_vectorized(
         self,
-        y_tensor: torch.Tensor
+        y_tensor: torch.Tensor,
     ) -> torch.Tensor:
-        """"
-        Evaluates the polynomial at the given tensor y_tensor per parameter.
-        This is the vectorized version of the polynomial.
-        """
         return self.eval_tensor(y_tensor, None, vectorized=True)
 
-    @torch.compile
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.eval_tensor_vectorized(x)
 
     def to_state(self) -> Any:
@@ -519,7 +427,6 @@ class SquaredSymbolicTorchPolynomial(torch.nn.Module, VariableMapMixin, StateMix
         )
 
 
-@torch.compile
 def calculate_coefficients_from_hermite_spline(
     knots: torch.Tensor,
     differences: torch.Tensor,
@@ -527,26 +434,21 @@ def calculate_coefficients_from_hermite_spline(
     dy: torch.Tensor,
     shift: bool = False,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    """
-    Construct a piecewise cubic polynomial from the given values and derivatives at the knots.
-    """
     assert y.shape[0] == knots.shape[0] and dy.shape[0] == knots.shape[0]
-    # compute the coefficients of the polynomials
-    # a + b * x + c * x^2 + d * x^3
+
     dy0 = dy[:-1] * differences
     dy1 = dy[1:] * differences
     y0 = y[:-1]
     y1 = y[1:]
 
-    # polynomial on the interval [0, 1]
     a = y0
     b = dy0
     c = 3 * (y1 - y0) - 2 * dy0 - dy1
     d = 2 * (y0 - y1) + dy0 + dy1
 
     if shift:
-        # transform the coefficients to the interval [knots[i], knots[i + 1]]
         x0 = knots[:-1]
+
         transformed_a = (
             a
             - b * (1 / differences) * x0
@@ -558,45 +460,30 @@ def calculate_coefficients_from_hermite_spline(
             - 2 * c * (1 / differences**2) * x0
             + 3 * d * (1 / differences**3) * x0**2
         )
-        transformed_c = c * (1 / differences**2) - 3 * d * (1 / differences**3) * x0
+        transformed_c = c * (1 / differences**2) - 3 * d * (
+            1 / differences**3
+        ) * x0
         transformed_d = d * (1 / differences**3)
 
         return transformed_a, transformed_b, transformed_c, transformed_d
-    else:
-        # transform the coefficients to the interval [0, (knots[i + 1] - knots[i])]
-        transformed_a = a
-        transformed_b = b * 1 / differences
-        transformed_c = c * 1 / differences**2
-        transformed_d = d * 1 / differences**3
 
-        return transformed_a, transformed_b, transformed_c, transformed_d
+    transformed_a = a
+    transformed_b = b * 1 / differences
+    transformed_c = c * 1 / differences**2
+    transformed_d = d * 1 / differences**3
+
+    return transformed_a, transformed_b, transformed_c, transformed_d
 
 
-@torch.compile
 def calc_2d_spline_component(
-    x: torch.Tensor,  # (2)
-    knot_idx: torch.Tensor,  # (2)
-    params: torch.Tensor,  # (2, num_pieces, 4)
+    x: torch.Tensor,
+    knot_idx: torch.Tensor,
+    params: torch.Tensor,
 ) -> torch.Tensor:
-    """
-    Calculate the 2D spline component for the given x and knot_idx.
-    The spline is the product of two cubic polynomials, one for each dimension.
-    Args:
-        x: The input tensor.
-        knot_idx: The indices of the knots.
-        params: The parameters of the spline.
-    Returns:
-        The calculated spline component.
-    """
-    def per_param(
-        p: torch.Tensor,  # (2, num_pieces)
-    ) -> torch.Tensor:
-        nonlocal knot_idx
-        # Ensure knot_idx is of shape (2, 1) for broadcasting
-        knot_idx = knot_idx.unsqueeze(-1)
-        # Gather the parameters corresponding to knot_idx
-        selected_params = torch.gather(p, dim=1, index=knot_idx)
-        return selected_params.squeeze(-1)  # (2)
+    def per_param(p: torch.Tensor) -> torch.Tensor:
+        selected_idx = knot_idx.unsqueeze(-1)
+        selected_params = torch.gather(p, dim=1, index=selected_idx)
+        return selected_params.squeeze(-1)
 
     poly_params = torch.vmap(per_param, in_dims=-1, out_dims=-1)(params)
 
@@ -610,44 +497,26 @@ def calc_2d_spline_component(
     return poly_per_component.prod(dim=-1)
 
 
-@torch.compile
 def calc_log_mixture(
-    x: torch.Tensor,  # (2)
-    knot_idx: torch.Tensor,  # (2)
-    m_params: torch.Tensor,  # (num_mixtures, 2, num_pieces, 4)
-    m_weights_log: torch.Tensor,  # (num_mixtures)
-    m_normalization: torch.Tensor,  # (num_mixtures, num_knots, num_knots)
-    eps: float = -1,  # (num_mixtures)
-):
-    """
-    Calculate the mixture of 2D splines.
-    Args:
-        x: The input tensor.
-        knot_idx: The indices of the knots.
-        m_params: The parameters of the mixture.
-        m_weights: The weights of the mixture.
-        m_normalization: The normalization coefficients of the mixture.
-        eps: A small value to avoid numerical instability.
-    Returns:
-        The log of the mixture of 2D splines.
-    """
+    x: torch.Tensor,
+    knot_idx: torch.Tensor,
+    m_params: torch.Tensor,
+    m_weights_log: torch.Tensor,
+    m_normalization: torch.Tensor,
+    eps: float = -1,
+) -> torch.Tensor:
     mixture_poly: torch.Tensor = torch.vmap(
         lambda p: calc_2d_spline_component(x, knot_idx, p)
-    )(
-        m_params
-    )  # .abs_()  # (num_mixtures)
-    m_normalization_coeff = m_normalization.sum(dim=-1).sum(
-        dim=-1
-    )  # (num_mixtures)
+    )(m_params)
+
+    m_normalization_coeff = m_normalization.sum(dim=-1).sum(dim=-1)
 
     if eps != -1:
-        # with torch.no_grad():
-        #     m_normalization_coeff = m_normalization_coeff.clamp(min=eps)
         m_normalization_coeff = m_normalization_coeff.clamp(min=eps)
 
-    densities_components = mixture_poly ** 2 / m_normalization_coeff
-    poly_log = torch.logsumexp(
-        torch.log(densities_components) + m_weights_log, dim=0
-    )
+    densities_components = mixture_poly**2 / m_normalization_coeff
 
-    return poly_log
+    return torch.logsumexp(
+        torch.log(densities_components) + m_weights_log,
+        dim=0,
+    )
