@@ -1,18 +1,24 @@
-# PAL - A Probabilistic Neuro-symbolic Layer for Algebraic Constraint Satisfaction
+# PAL – A Probabilistic Neuro-symbolic Layer for Algebraic Constraint Satisfaction
 
 [![Python application](https://github.com/april-tools/pal/actions/workflows/python-app.yml/badge.svg)](https://github.com/april-tools/pal/actions/workflows/python-app.yml)
 
 This repository contains the code for **PAL (Probabilistic Algebraic Layer)**, a probabilistic neuro-symbolic layer for algebraic constraint satisfaction.
 
-The original PAL implementation focuses on spline-based constrained probabilistic inference and accompanies the paper:
+The original PAL implementation accompanies the paper:
 
 > Leander Kurscheidt, Paolo Morettin, Roberto Sebastiani, Andrea Passerini, Antonio Vergari.
+>
 > *A Probabilistic Neuro-symbolic Layer for Algebraic Constraint Satisfaction.*
+>
 > UAI 2025.
 
-This fork extends the original implementation with an experimental framework for investigating the **numerical stability of polynomial basis representations in constrained probabilistic inference**.
+The original paper can be found here:
 
-The repository now includes the complete experimental code used in the MSc dissertation:
+https://proceedings.mlr.press/v286/kurscheidt25a.html
+
+This fork extends the original implementation with a comprehensive experimental framework for investigating the **numerical stability of polynomial basis representations in constrained probabilistic inference**.
+
+The repository now includes the complete experimental code developed for the MSc dissertation:
 
 > *Investigating the Numerical Stability of Polynomial Basis Representations in Constrained Probabilistic Inference.*
 
@@ -20,41 +26,82 @@ The repository now includes the complete experimental code used in the MSc disse
 
 # Repository Structure
 
-The repository now contains two complementary components:
+```text
+pal/
+├── analysis/
+│   ├── simplex/          # Degree, dimension, precision, and scaling experiments
+│   ├── polytope/         # Convex polytope benchmarks
+│   ├── validation/       # Basis validation utilities
+│   └── plots/            # Figure-generation scripts
+│
+├── docs/
+│   ├── experiments.md
+│   └── experimental_results.md
+│
+├── figures/              # Dissertation figures
+│
+├── pal/                  # Original PAL implementation
+│
+└── data/
+```
 
-- **Original PAL implementation**
-    - Spline-based constrained probabilistic inference
-    - Constrained Stanford Drone Dataset experiments
-    - PAL training and evaluation pipelines
+---
 
-- **Numerical stability extension**
-    - Monomial, Legendre, and Chebyshev basis implementations
-    - Conditioning diagnostics
-    - Coefficient recovery experiments
-    - Precision studies
-    - Perturbation analysis
-    - Constrained integration benchmarks
-    - Downstream probability evaluation
-    - Representative PAL benchmarks
-    - Reproducibility utilities
+# Repository Components
+
+## Original PAL Implementation
+
+The original PAL implementation includes:
+
+- Spline-based constrained probabilistic inference
+- Constrained Stanford Drone Dataset experiments
+- PAL training and evaluation pipelines
+- Neural trajectory prediction
+- Constraint-aware probabilistic modeling
+
+---
+
+## Numerical Stability Extension
+
+The experimental framework extends PAL with:
+
+- Monomial polynomial representations
+- Legendre polynomial representations
+- Chebyshev polynomial representations
+- Conditioning diagnostics
+- Numerical rank analysis
+- Higher-dimensional experiments
+- Floating-point precision studies
+- Perturbation analysis
+- Constrained integration benchmarks
+- Downstream probabilistic inference
+- Representative PAL benchmarks
 
 ---
 
 # Example PAL Prediction
 
-This is an example prediction of PAL on the Constrained Stanford Drone Dataset.
+This example demonstrates PAL on the Constrained Stanford Drone Dataset.
 
-We predict a probability distribution over future trajectories while guaranteeing constraint satisfaction.
+The model predicts a probability distribution over future trajectories while guaranteeing constraint satisfaction.
 
-![Example image](data/sdd_spline_example.png)
+![Example prediction](data/sdd_spline_example.png)
 
-![Example image](data/sdd_unconditional_spline_example.png)
+![Example prediction](data/sdd_unconditional_spline_example.png)
 
 ---
 
 # Installation
 
-Clone the repository and run:
+Clone the repository:
+
+```bash
+git clone https://github.com/k-r-o-y/pal.git
+
+cd pal
+```
+
+Run the setup script:
 
 ```bash
 ./setup.sh
@@ -66,7 +113,7 @@ Clone the repository and run:
 
 ## Constrained Stanford Drone Dataset
 
-Train a simple MLP on the constrained SDD dataset:
+Train a simple MLP:
 
 ```bash
 python pal/training/train_mlp_sdd.py \
@@ -85,7 +132,7 @@ Expected mean test log-likelihood:
 
 ## Unconditional SDD Experiment
 
-Train the unconditional variant:
+Train the unconditional model:
 
 ```bash
 python pal/training/train_unconditional_sdd.py \
@@ -108,7 +155,7 @@ Expected mean test log-likelihood:
 
 # Numerical Stability Experiments
 
-The numerical stability framework extends PAL with experiments that investigate how polynomial basis representations affect constrained probabilistic inference.
+The experimental framework investigates how polynomial basis representations affect constrained probabilistic inference.
 
 The experiments compare:
 
@@ -121,178 +168,95 @@ under increasing:
 - Polynomial degree
 - Dimensionality
 - Constraint complexity
-- Numerical precision
+- Floating-point precision
 - Perturbation magnitude
 
 ---
 
 # Implemented Experiments
 
-## 1. Basis Conversion and Equivalence
-
-Verifies that equivalent polynomial functions remain equivalent after conversion between basis representations.
-
-Evaluates:
-
-- Basis conversion error
-- Numerical consistency
-- Functional equivalence
-
----
-
-## 2. Conditioning Experiments
-
-Measures the conditioning of polynomial representations as degree increases.
-
-Evaluates:
-
-- Vandermonde condition numbers
-- Singular-value spectra
-- Constraint-induced Gram matrices
-- Numerical rank
-
-Produces:
-
-- `condition_number_vs_degree`
-- `constraint_gram_condition_number_vs_degree`
-- `constraint_gram_rank_fraction_vs_degree`
+| Experiment | Metrics |
+| --- | --- |
+| Basis equivalence | Functional equivalence, basis conversion |
+| Conditioning | Vandermonde conditioning, Gram matrix conditioning |
+| Higher dimensions | Scaling, runtime, basis growth |
+| Precision | float32 vs float64 |
+| Perturbation | Noise amplification, recovery error |
+| Downstream inference | Partition function and query probability error |
+| Polytope benchmarks | Integration, recovery, runtime |
+| PAL benchmarks | End-to-end probabilistic inference |
 
 ---
 
-## 3. Higher-Dimensional Experiments
+# Experimental Scripts
 
-Investigates how conditioning changes as dimensionality increases.
+## Simplex Benchmarks
 
-Evaluates:
-
-- Dimensions 1–5
-- Basis growth
-- Runtime scaling
-- Rank preservation
-
-Produces:
-
-- `condition_number_vs_dimension`
-- `relative_error_vs_dimension`
-- `runtime_and_basis_count_vs_dimension`
+```text
+analysis/simplex/
+├── run_simplex_benchmark.py
+├── run_dimension_benchmark.py
+├── run_precision_benchmark.py
+└── run_geometric_scale_benchmark.py
+```
 
 ---
 
-## 4. Precision Experiments
+## Polytope Benchmarks
 
-Compares reduced and full precision arithmetic.
-
-Evaluates:
-
-- `float32`
-- `float64`
-
-Measures:
-
-- Conditioning
-- Relative error
-- Numerical rank
-- Runtime
-
-Produces:
-
-- `rank_fraction_vs_precision`
-- `relative_error_vs_precision`
-- `runtime_vs_precision`
+```text
+analysis/polytope/
+└── run_polytope_benchmark.py
+```
 
 ---
 
-## 5. Perturbation and Coefficient Recovery
+## Validation Utilities
 
-Introduces controlled perturbations into coefficient recovery.
-
-Measures:
-
-- Noise amplification
-- Coefficient reconstruction error
-- Sensitivity to perturbations
-
-Produces:
-
-- `perturbation_sensitivity_vs_degree`
-- `perturbation_sensitivity_vs_dimension`
-- `perturbation_sensitivity_vs_precision`
+```text
+analysis/validation/
+└── validate_basis.py
+```
 
 ---
 
-## 6. Downstream Probability Experiments
+## Plot Generation
 
-Evaluates whether representation-level numerical differences propagate into probabilistic quantities.
-
-Measures:
-
-- Partition-function error
-- Normalized query probability error
-- Runtime
-- Sensitivity
-
-Produces:
-
-- `partition_function_error_vs_degree`
-- `query_probability_error_vs_degree`
-- `query_probability_error_vs_query_scale`
-- `query_probability_sensitivity_vs_degree`
-- `downstream_runtime_vs_degree`
-- `downstream_error_summary`
+```text
+analysis/plots/
+├── plot_condition_vs_degree.py
+├── plot_constraint_gram_benchmark.py
+├── plot_dimension_benchmark.py
+├── plot_downstream_benchmark.py
+├── plot_generated_polynomials.py
+├── plot_perturbation_sensitivity_vs_degree.py
+├── plot_polytope_benchmark.py
+├── plot_polytope_runtime_vs_dimension.py
+├── plot_precision_benchmark.py
+├── plot_relative_error_vs_degree.py
+└── plot_runtime_vs_degree.py
+```
 
 ---
 
-## 7. Constrained Polytope Benchmarks
+# Documentation
 
-Replaces simplex integration with SMT(LRA)-style constrained polytopes.
+Additional documentation is available in:
 
-Evaluates:
+```text
+docs/
+├── experiments.md
+└── experimental_results.md
+```
 
-- Static constraints
-- Dynamic constraints
-- Box-with-obstacle geometries
-- Recovery under noisy observations
+These documents describe:
 
-Measures:
-
-- Condition number
-- Rank fraction
-- Integration error
-- Recovery error
-- Runtime
-
-Produces:
-
-- `polytope_condition_number_vs_degree`
-- `polytope_rank_fraction_vs_degree`
-- `polytope_integration_error_vs_degree`
-- `polytope_perturbation_sensitivity_vs_degree`
-- `polytope_recovered_integral_error_vs_degree`
-- `polytope_coefficient_noise_amplification_vs_degree`
-- `polytope_runtime_vs_degree`
-- `polytope_runtime_vs_dimension`
-- `polytope_dynamic_schedule_error`
-- `polytope_dynamic_trajectory_error`
-- `polytope_error_summary`
-
----
-
-## 8. Representative PAL Benchmarks
-
-Evaluates numerical stability within the PAL inference pipeline itself.
-
-Measures:
-
-- Partition-function accuracy
-- Query probability accuracy
-- Coefficient construction stability
-- Basis conversion stability
-
-Produces:
-
-- `pal_condition_number_vs_degree`
-- `pal_partition_function_error_vs_degree`
-- `pal_query_probability_error_vs_degree`
+- Research questions
+- Experimental methodology
+- Evaluation metrics
+- Experimental results
+- Numerical findings
+- Reproducibility
 
 ---
 
@@ -300,14 +264,14 @@ Produces:
 
 The repository includes:
 
-- Deterministic seeds
-- Stored row-level benchmark results
+- Deterministic random seeds
+- Benchmark scripts
 - Plot-generation scripts
-- Configuration files
-- Environment recording
-- Experiment metadata
+- Experimental configurations
+- Figure-generation utilities
+- Complete dissertation documentation
 
-All figures in the dissertation can be reproduced directly from the repository.
+All figures presented in the accompanying MSc dissertation can be reproduced directly from this repository.
 
 ---
 
