@@ -1,91 +1,99 @@
-# PAL – A Probabilistic Neuro-symbolic Layer for Algebraic Constraint Satisfaction
+# PAL - A Probabilistic Neuro-symbolic Layer for Algebraic Constraint Satisfaction
 
 [![Python application](https://github.com/april-tools/pal/actions/workflows/python-app.yml/badge.svg)](https://github.com/april-tools/pal/actions/workflows/python-app.yml)
 
-This repository contains the code for **PAL (Probabilistic Algebraic Layer)**, a probabilistic neuro-symbolic layer for algebraic constraint satisfaction.
+This repository contains the code for **PAL (Probabilistic Algebraic Layer)**, a probabilistic neuro-symbolic framework for **algebraic constraint satisfaction under probabilistic inference**.
 
-The original PAL implementation accompanies the paper:
+The original implementation focuses on **spline-based constrained probabilistic inference** and accompanies the paper:
 
-> Leander Kurscheidt, Paolo Morettin, Roberto Sebastiani, Andrea Passerini, Antonio Vergari.
+> **Leander Kurscheidt, Paolo Morettin, Roberto Sebastiani, Andrea Passerini, Antonio Vergari.**
 >
 > *A Probabilistic Neuro-symbolic Layer for Algebraic Constraint Satisfaction.*
 >
-> UAI 2025.
+> Proceedings of the 41st Conference on Uncertainty in Artificial Intelligence (UAI 2025).
 
-The original paper can be found here:
+This fork extends the original PAL implementation with a comprehensive experimental framework for investigating the **numerical stability of polynomial basis representations in constrained probabilistic inference**.
 
-https://proceedings.mlr.press/v286/kurscheidt25a.html
+The repository now contains the complete experimental framework developed for the MSc dissertation:
 
-This fork extends the original implementation with a comprehensive experimental framework for investigating the **numerical stability of polynomial basis representations in constrained probabilistic inference**.
+> **Investigating the Numerical Stability of Polynomial Basis Representations in Constrained Probabilistic Inference**
+>
+> University of Edinburgh
+>
+> School of Informatics
+>
+> MSc Informatics (High Performance Computing with Data Science)
 
-The repository now includes the complete experimental code developed for the MSc dissertation:
+---
 
-> *Investigating the Numerical Stability of Polynomial Basis Representations in Constrained Probabilistic Inference.*
+# Overview
+
+Polynomial representations are fundamental to constrained probabilistic inference.
+
+However, high-degree polynomial approximations are often numerically unstable, particularly when represented using monomial bases.
+
+This repository investigates how different polynomial bases influence:
+
+- Numerical conditioning
+- Coefficient recovery
+- Constraint integration
+- Partition function estimation
+- Query probability estimation
+- Numerical precision
+- High-dimensional inference
+- Constrained polytope integration
+- End-to-end PAL inference
+
+Three polynomial bases are compared throughout the experiments:
+
+- **Monomial basis**
+- **Legendre basis**
+- **Chebyshev basis**
 
 ---
 
 # Repository Structure
 
 ```text
-pal/
-├── analysis/
-│   ├── simplex/          # Degree, dimension, precision, and scaling experiments
-│   ├── polytope/         # Convex polytope benchmarks
-│   ├── validation/       # Basis validation utilities
-│   └── plots/            # Figure-generation scripts
-│
-├── docs/
-│   ├── experiments.md
-│   └── experimental_results.md
-│
-├── figures/              # Dissertation figures
-│
-├── pal/                  # Original PAL implementation
-│
-└── data/
+.
+├── analysis/              # Benchmark implementations
+├── data/                  # PAL datasets
+├── docs/                  # Experimental documentation
+├── figures/               # Dissertation figures
+├── pal/                   # PAL implementation
+├── tests_pal/             # Testing utilities
+├── README.md
+└── setup.sh
 ```
 
 ---
 
-# Repository Components
+# Original PAL Implementation
 
-## Original PAL Implementation
+The original PAL framework provides:
 
-The original PAL implementation includes:
-
-- Spline-based constrained probabilistic inference
+- Probabilistic algebraic constraint satisfaction
+- Spline-based inference
+- Weighted model integration
+- Constrained trajectory prediction
+- Neural network integration
 - Constrained Stanford Drone Dataset experiments
-- PAL training and evaluation pipelines
-- Neural trajectory prediction
-- Constraint-aware probabilistic modeling
 
----
+The original PAL paper is available here:
 
-## Numerical Stability Extension
-
-The experimental framework extends PAL with:
-
-- Monomial polynomial representations
-- Legendre polynomial representations
-- Chebyshev polynomial representations
-- Conditioning diagnostics
-- Numerical rank analysis
-- Higher-dimensional experiments
-- Floating-point precision studies
-- Perturbation analysis
-- Constrained integration benchmarks
-- Downstream probabilistic inference
-- Representative PAL benchmarks
+https://proceedings.mlr.press/v286/kurscheidt25a.html
 
 ---
 
 # Example PAL Prediction
 
-This example demonstrates PAL on the Constrained Stanford Drone Dataset.
+PAL predicts a probability distribution over future trajectories while guaranteeing constraint satisfaction.
 
-The model predicts a probability distribution over future trajectories while guaranteeing constraint satisfaction.
+Constrained prediction:
 
 ![Example prediction](data/sdd_spline_example.png)
+
+Unconditional prediction:
 
 ![Example prediction](data/sdd_unconditional_spline_example.png)
 
@@ -97,11 +105,10 @@ Clone the repository:
 
 ```bash
 git clone https://github.com/k-r-o-y/pal.git
-
 cd pal
 ```
 
-Run the setup script:
+Install all dependencies:
 
 ```bash
 ./setup.sh
@@ -113,7 +120,7 @@ Run the setup script:
 
 ## Constrained Stanford Drone Dataset
 
-Train a simple MLP:
+Train a simple MLP on the constrained SDD dataset:
 
 ```bash
 python pal/training/train_mlp_sdd.py \
@@ -132,7 +139,7 @@ Expected mean test log-likelihood:
 
 ## Unconditional SDD Experiment
 
-Train the unconditional model:
+Train the unconditional variant:
 
 ```bash
 python pal/training/train_unconditional_sdd.py \
@@ -153,110 +160,263 @@ Expected mean test log-likelihood:
 
 ---
 
-# Numerical Stability Experiments
+# Numerical Stability Extension
 
-The experimental framework investigates how polynomial basis representations affect constrained probabilistic inference.
+The numerical stability framework investigates how polynomial basis representations affect constrained probabilistic inference.
 
-The experiments compare:
-
-- Monomial bases
-- Legendre bases
-- Chebyshev bases
-
-under increasing:
+The experiments systematically vary:
 
 - Polynomial degree
-- Dimensionality
+- Domain scaling
 - Constraint complexity
-- Floating-point precision
+- Dimensionality
+- Numerical precision
 - Perturbation magnitude
+
+The framework evaluates both **representation-level stability** and **downstream probabilistic accuracy**.
 
 ---
 
 # Implemented Experiments
 
-| Experiment | Metrics |
-| --- | --- |
-| Basis equivalence | Functional equivalence, basis conversion |
-| Conditioning | Vandermonde conditioning, Gram matrix conditioning |
-| Higher dimensions | Scaling, runtime, basis growth |
-| Precision | float32 vs float64 |
-| Perturbation | Noise amplification, recovery error |
-| Downstream inference | Partition function and query probability error |
-| Polytope benchmarks | Integration, recovery, runtime |
-| PAL benchmarks | End-to-end probabilistic inference |
+## 1. Basis Equivalence and Representation Analysis
 
----
+Verifies that equivalent polynomial functions remain equivalent after conversion between basis representations.
 
-# Experimental Scripts
+Evaluates:
 
-## Simplex Benchmarks
+- Basis conversion accuracy
+- Functional equivalence
+- Integration consistency
+- Representation stability
+
+Generated figures:
 
 ```text
-analysis/simplex/
-├── run_simplex_benchmark.py
-├── run_dimension_benchmark.py
-├── run_precision_benchmark.py
-└── run_geometric_scale_benchmark.py
+generated_polynomial_1d_examples
+generated_polynomial_2d_heatmaps
+generated_polynomial_2d_surfaces
+generated_polynomial_basis_equivalence
+generated_polynomial_constrained_region
+basis_integral_error
+basis_sensitivity
 ```
 
 ---
 
-## Polytope Benchmarks
+## 2. Conditioning Analysis
+
+Investigates how polynomial conditioning changes as polynomial degree increases.
+
+Evaluates:
+
+- Vandermonde conditioning
+- Singular value spectra
+- Constraint-induced Gram matrices
+- Effective numerical rank
+
+Generated figures:
 
 ```text
-analysis/polytope/
-└── run_polytope_benchmark.py
+condition_number_vs_degree
+condition_number_vs_scale
+constraint_gram_condition_number_vs_degree
+constraint_gram_rank_fraction_vs_degree
 ```
 
 ---
 
-## Validation Utilities
+## 3. Higher-Dimensional Benchmarks
+
+Investigates the effect of increasing dimensionality.
+
+Evaluates:
+
+- Dimensions 1-5
+- Basis growth
+- Runtime scaling
+- Numerical stability
+
+Generated figures:
 
 ```text
-analysis/validation/
-└── validate_basis.py
+condition_number_vs_dimension
+relative_error_vs_dimension
+runtime_and_basis_count_vs_dimension
 ```
 
 ---
 
-## Plot Generation
+## 4. Precision Experiments
+
+Compares reduced and full precision arithmetic.
+
+Evaluates:
+
+- Float32
+- Float64
+
+Measures:
+
+- Conditioning
+- Relative error
+- Rank preservation
+- Runtime
+
+Generated figures:
 
 ```text
-analysis/plots/
-├── plot_condition_vs_degree.py
-├── plot_constraint_gram_benchmark.py
-├── plot_dimension_benchmark.py
-├── plot_downstream_benchmark.py
-├── plot_generated_polynomials.py
-├── plot_perturbation_sensitivity_vs_degree.py
-├── plot_polytope_benchmark.py
-├── plot_polytope_runtime_vs_dimension.py
-├── plot_precision_benchmark.py
-├── plot_relative_error_vs_degree.py
-└── plot_runtime_vs_degree.py
+condition_number_vs_precision
+rank_fraction_vs_precision
+relative_error_vs_precision
+runtime_vs_precision
 ```
+
+---
+
+## 5. Perturbation and Coefficient Recovery
+
+Introduces controlled perturbations into coefficient reconstruction.
+
+Measures:
+
+- Noise amplification
+- Recovery accuracy
+- Sensitivity to perturbations
+
+Generated figures:
+
+```text
+perturbation_sensitivity_vs_degree
+perturbation_sensitivity_vs_dimension
+perturbation_sensitivity_vs_precision
+```
+
+---
+
+## 6. Downstream Probability Experiments
+
+Evaluates whether representation-level numerical errors propagate into probabilistic quantities.
+
+Measures:
+
+- Partition function accuracy
+- Query probability accuracy
+- Sensitivity
+- Runtime
+
+Generated figures:
+
+```text
+partition_function_error_vs_degree
+query_probability_error_vs_degree
+query_probability_error_vs_query_scale
+query_probability_sensitivity_vs_degree
+downstream_runtime_vs_degree
+downstream_error_summary
+```
+
+---
+
+## 7. Constrained Polytope Benchmarks
+
+Extends the original simplex experiments to SMT(LRA)-style constrained polytopes.
+
+Evaluates:
+
+- Static constraints
+- Dynamic constraints
+- Scheduling constraints
+- Trajectory constraints
+- Obstacle-avoidance geometries
+- Noisy observations
+
+Measures:
+
+- Condition number
+- Numerical rank
+- Integration error
+- Recovery error
+- Runtime
+
+Generated figures:
+
+```text
+polytope_condition_number_vs_degree
+polytope_rank_fraction_vs_degree
+polytope_integration_error_vs_degree
+polytope_perturbation_sensitivity_vs_degree
+polytope_recovered_integral_error_vs_degree
+polytope_coefficient_noise_amplification_vs_degree
+polytope_runtime_vs_degree
+polytope_runtime_vs_dimension
+polytope_dynamic_schedule_error
+polytope_dynamic_trajectory_error
+polytope_error_summary
+```
+
+---
+
+## 8. PAL-Specific Benchmarks
+
+Evaluates numerical stability within the PAL inference pipeline itself.
+
+Measures:
+
+- Partition function accuracy
+- Query probability accuracy
+- Basis conversion stability
+- Conditioning
+- Rank preservation
+
+Generated figures:
+
+```text
+pal_condition_number_vs_degree
+pal_rank_fraction_vs_degree
+pal_partition_function_error_vs_degree
+pal_partition_function_error_vs_dimension
+pal_query_probability_error_vs_degree
+pal_query_probability_error_vs_dimension
+pal_perturbation_sensitivity_vs_degree
+pal_error_summary
+```
+
+---
+
+# Figures
+
+All figures used in the MSc dissertation are available in the `figures/` directory.
+
+Figures are provided in three formats:
+
+- PDF (publication quality)
+- PNG (quick visualization)
+- SVG (vector graphics)
+
+The repository currently contains more than 130 generated figures covering:
+
+- Polynomial basis visualization
+- Conditioning analysis
+- Constraint-induced conditioning
+- Higher-dimensional inference
+- Numerical precision
+- Perturbation analysis
+- Coefficient recovery
+- Downstream probability estimation
+- Polytope integration
+- PAL inference
 
 ---
 
 # Documentation
 
-Additional documentation is available in:
+Additional documentation is available in the `docs/` directory.
 
-```text
-docs/
-├── experiments.md
-└── experimental_results.md
-```
-
-These documents describe:
-
-- Research questions
-- Experimental methodology
-- Evaluation metrics
-- Experimental results
-- Numerical findings
-- Reproducibility
+| Document | Description |
+| --- | --- |
+| `experiments.md` | Complete experimental methodology |
+| `experimental_results.md` | Experimental findings and analysis |
 
 ---
 
@@ -265,23 +425,25 @@ These documents describe:
 The repository includes:
 
 - Deterministic random seeds
-- Benchmark scripts
+- Benchmark implementations
+- Stored experimental outputs
 - Plot-generation scripts
-- Experimental configurations
-- Figure-generation utilities
-- Complete dissertation documentation
+- Figure generation pipelines
+- Experiment metadata
 
-All figures presented in the accompanying MSc dissertation can be reproduced directly from this repository.
+All figures reported in the dissertation can be reproduced directly from the repository.
 
 ---
 
-# GASP!
+# GASP
 
-The dependency was added via subtree from:
+The GASP dependency was added via subtree from:
 
+```text
 https://github.com/april-tools/gasp.git
+```
 
-Update via:
+Update the subtree:
 
 ```bash
 git subtree pull \
@@ -291,7 +453,7 @@ git subtree pull \
     --squash
 ```
 
-Push via:
+Push the subtree:
 
 ```bash
 git subtree push \
@@ -304,13 +466,17 @@ git subtree push \
 
 # Citation
 
+Original PAL paper:
+
 ```bibtex
 @inproceedings{kurscheidt2025probabilistic,
-  title={A Probabilistic Neuro-symbolic Layer for Algebraic Constraint Satisfaction},
-  author={Kurscheidt, Leander and Morettin, Paolo and Sebastiani, Roberto and Passerini, Andrea and Vergari, Antonio},
-  booktitle={Conference on Uncertainty in Artificial Intelligence},
-  pages={2431--2471},
-  year={2025},
-  organization={PMLR}
+    title={A Probabilistic Neuro-symbolic Layer for Algebraic Constraint Satisfaction},
+    author={Kurscheidt, Leander and Morettin, Paolo and Sebastiani, Roberto and Passerini, Andrea and Vergari, Antonio},
+    booktitle={Conference on Uncertainty in Artificial Intelligence},
+    pages={2431--2471},
+    year={2025},
+    organization={PMLR}
 }
 ```
+
+If you use the numerical stability extensions developed in this repository, please also cite the accompanying MSc dissertation.
